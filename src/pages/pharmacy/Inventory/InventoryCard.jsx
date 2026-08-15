@@ -1,4 +1,8 @@
-function InventoryCard({ item, onEdit }) {
+import {useEffect} from "react";
+import api from "../../../api/api.js";
+import {deleteInventory} from "../../../services/pharmacyService.js";
+
+function InventoryCard({ item, onEdit , onDelete }) {
     return (
         <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden hover:shadow-xl hover:border-teal-100 transition-all duration-300 flex flex-col justify-between group p-5">
             <div className="space-y-4">
@@ -67,6 +71,19 @@ function InventoryCard({ item, onEdit }) {
                 </svg>
                 Edit Item
             </button>
+            <div className="flex gap-3 mt-5">
+                <button
+                    type="button"
+                    onClick={() => {
+                        if (window.confirm("Are you sure you want to delete this item?")) {
+                            onDelete(item.id);
+                        }
+                    }}
+                    className="flex-1 py-3 rounded-2xl bg-rose-600 text-white hover:bg-rose-700"
+                >
+                    Delete
+                </button>
+            </div>
         </div>
     );
 }

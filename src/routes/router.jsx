@@ -18,6 +18,9 @@ import UpdatePatientProfile from "../pages/patient/UpdatePatientProfile.jsx";
 import PharmacyProfile from "../pages/pharmacy/PharmacyProfile.jsx";
 import UpdatePharmacy from "../pages/pharmacy/UpdatePharmacy.jsx";
 import Inventory from "../pages/pharmacy/Inventory/Inventory.jsx";
+import AddInventory from "../pages/pharmacy/Inventory/AddInventory.jsx";
+import ImportLogs from "../pages/pharmacy/Inventory/ImportLogs.jsx";
+import PharmacyReservations from "../pages/pharmacy/PharmacyReservations.jsx";
 
 const router = createBrowserRouter([
     // Public Routes
@@ -112,6 +115,18 @@ const router = createBrowserRouter([
             {
                 path: "inventory",
                 element: <Inventory />,
+            },
+            {
+                path: "inventory-add",
+                element: <AddInventory />,
+            },
+            {
+                path: "inventory-logs",
+                element: <ImportLogs />,
+            },
+            {
+                path: "pharmacy-reservations",
+                element: <PharmacyReservations />,
             },
         ],
     },

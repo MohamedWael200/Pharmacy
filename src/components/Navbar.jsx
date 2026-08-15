@@ -139,6 +139,17 @@ function Navbar() {
                                 </Link>
 
                                 <Link
+                                    to="/dashboard/pharmacy-reservations"
+                                    className={`px-3 py-2 rounded-xl text-sm font-semibold transition-all ${
+                                        isActive("/dashboard/pharmacy-reservations")
+                                            ? "text-teal-600 bg-teal-50/80"
+                                            : "text-slate-600 hover:text-teal-600 hover:bg-slate-50"
+                                    }`}
+                                >
+                                    Reservations
+                                </Link>
+
+                                <Link
                                     to="/dashboard/profile"
                                     className={`px-3 py-2 rounded-xl text-sm font-semibold transition-all ${
                                         isActive("/dashboard/profile")

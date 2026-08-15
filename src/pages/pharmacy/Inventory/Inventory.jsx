@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { getInventory } from "../../../services/pharmacyService.js";
+import { Link } from "react-router-dom";
+import { deleteInventory, getInventory } from "../../../services/pharmacyService.js";
 import EditInventoryModal from "./EditInventoryModal.jsx";
 import InventoryCard from "./InventoryCard.jsx";
 
@@ -22,6 +23,17 @@ function Inventory() {
     useEffect(() => {
         fetchInventory();
     }, []);
+
+    async function handleDelete(id) {
+        try {
+            await deleteInventory(id);
+            setInventory((prev) => prev.filter((item) => item.id !== id));
+            triggerToast("success", "Item deleted successfully!");
+        } catch (error) {
+            console.log(error);
+            triggerToast("error", "Failed to delete item.");
+        }
+    }
 
     async function fetchInventory() {
         try {
@@ -103,27 +115,58 @@ function Inventory() {
 
             <div className="max-w-7xl mx-auto space-y-8">
                 {/* Header */}
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-200/60 pb-6">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200/60 pb-6">
                     <div>
-                        <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
-                            My Inventory
-                        </h1>
-                        <p className="mt-1 text-slate-500 font-medium text-sm">
+                        <div className="flex items-center gap-3 mb-1">
+                            <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+                                My Inventory
+                            </h1>
+                            <span className="px-3 py-1 rounded-full text-xs font-bold bg-teal-50 text-teal-700 border border-teal-100">
+                                {inventory.length} Items
+                            </span>
+                        </div>
+                        <p className="text-slate-500 font-medium text-sm">
                             Manage stock quantities, medicine prices, and batch details.
                         </p>
                     </div>
-                    <span className="px-4 py-1.5 rounded-full text-xs font-bold bg-teal-50 text-teal-700 border border-teal-100">
-                        Total Items: {inventory.length}
-                    </span>
+
+                    {/* Actions Group */}
+                    <div className="flex items-center gap-3 flex-wrap sm:flex-nowrap">
+                        <Link
+                            to="/dashboard/inventory-logs"
+                            className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 shadow-sm transition-all duration-200 active:scale-[0.98]"
+                        >
+                            <svg className="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                            Import Logs
+                        </Link>
+
+                        <Link
+                            to="/dashboard/inventory-add"
+                            className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-2xl text-xs sm:text-sm font-semibold text-white bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-600 hover:to-emerald-600 shadow-md shadow-teal-500/20 transition-all duration-200 active:scale-[0.98]"
+                        >
+                            <svg className="w-4 h-4 stroke-current" fill="none" viewBox="0 0 24 24" strokeWidth="2">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                            </svg>
+                            Add Inventory
+                        </Link>
+                    </div>
                 </div>
 
                 {/* Grid */}
                 {inventory.length === 0 ? (
-                    <div className="bg-white rounded-3xl border border-dashed border-slate-300 p-12 text-center text-slate-400">
-                        <svg className="w-12 h-12 mx-auto mb-3 stroke-current opacity-40" fill="none" viewBox="0 0 24 24" strokeWidth="1.5">
+                    <div className="bg-white rounded-3xl border border-dashed border-slate-300 p-12 text-center text-slate-400 shadow-sm">
+                        <svg className="w-12 h-12 mx-auto mb-3 stroke-current opacity-40 text-slate-500" fill="none" viewBox="0 0 24 24" strokeWidth="1.5">
                             <path strokeLinecap="round" strokeLinejoin="round" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
                         </svg>
                         <p className="text-base font-semibold text-slate-600">No inventory items found.</p>
+                        <Link
+                            to="/dashboard/inventory-add"
+                            className="inline-block mt-3 text-xs font-bold text-teal-600 hover:text-teal-700 hover:underline"
+                        >
+                            Click here to add your first item
+                        </Link>
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -132,6 +175,7 @@ function Inventory() {
                                 key={item.id}
                                 item={item}
                                 onEdit={handleEdit}
+                                onDelete={handleDelete}
                             />
                         ))}
                     </div>

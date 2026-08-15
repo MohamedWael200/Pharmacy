@@ -1,10 +1,57 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { deleteInventory, getInventory } from "../../../services/pharmacyService.js";
 import EditInventoryModal from "./EditInventoryModal.jsx";
 import InventoryCard from "./InventoryCard.jsx";
 
+// Floating "stock box" shape — a soft rounded square, distinct from the
+// pill-capsules (medicine page) and circular blobs (reservations page),
+// so this page reads as its own place: inventory = packaged stock.
+function FloatingBox({ className, delay = 0, duration = 15, rotate = 12 }) {
+    return (
+        <motion.div
+            className={`absolute rounded-2xl ${className}`}
+            initial={{ opacity: 0, y: 0, rotate: 0 }}
+            animate={{
+                opacity: 1,
+                y: [0, -18, 0],
+                rotate: [0, rotate, 0],
+            }}
+            transition={{
+                opacity: { duration: 1.2, delay },
+                y: { duration, repeat: Infinity, ease: "easeInOut", delay },
+                rotate: { duration: duration * 1.2, repeat: Infinity, ease: "easeInOut", delay },
+            }}
+        />
+    );
+}
+
+const gridVariants = {
+    hidden: {},
+    show: {
+        transition: { staggerChildren: 0.07, delayChildren: 0.05 },
+    },
+};
+
+const cardVariants = {
+    hidden: { opacity: 0, y: 18, scale: 0.97 },
+    show: {
+        opacity: 1,
+        y: 0,
+        scale: 1,
+        transition: { duration: 0.4, ease: [0.22, 1, 0.36, 1] },
+    },
+    exit: {
+        opacity: 0,
+        scale: 0.9,
+        transition: { duration: 0.2 },
+    },
+};
+
 function Inventory() {
+    const shouldReduceMotion = useReducedMotion();
+
     const [inventory, setInventory] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
@@ -64,7 +111,11 @@ function Inventory() {
     if (loading) {
         return (
             <div className="min-h-[calc(100vh-4rem)] flex flex-col items-center justify-center bg-slate-50/50">
-                <div className="w-10 h-10 border-4 border-teal-200 border-t-teal-600 rounded-full animate-spin"></div>
+                <motion.div
+                    className="w-10 h-10 border-4 border-teal-200 border-t-teal-600 rounded-full"
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 0.8, repeat: Infinity, ease: "linear" }}
+                />
                 <p className="mt-4 text-sm font-semibold text-slate-500">Loading inventory...</p>
             </div>
         );
@@ -73,49 +124,86 @@ function Inventory() {
     if (error) {
         return (
             <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center bg-slate-50/50 px-4">
-                <div className="p-6 bg-rose-50 border border-rose-200 rounded-2xl text-center max-w-md">
+                <motion.div
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="p-6 bg-rose-50 border border-rose-200 rounded-2xl text-center max-w-md"
+                >
                     <p className="text-rose-600 font-semibold">{error}</p>
-                </div>
+                </motion.div>
             </div>
         );
     }
 
     return (
-        <div className="min-h-[calc(100vh-4rem)] bg-slate-50/50 py-10 px-4 sm:px-6 lg:px-8 relative">
+        <div className="relative min-h-[calc(100vh-4rem)] bg-slate-50/50 py-10 px-4 sm:px-6 lg:px-8 overflow-hidden">
 
-            {/* Custom Toast Notification */}
-            {toast.show && (
-                <div
-                    className={`fixed top-5 right-5 z-50 flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-xl border transition-all duration-300 animate-bounce ${
-                        toast.type === "success"
-                            ? "bg-emerald-600 text-white border-emerald-500/30 shadow-emerald-600/20"
-                            : "bg-rose-600 text-white border-rose-500/30 shadow-rose-600/20"
-                    }`}
-                >
-                    {toast.type === "success" ? (
-                        <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-                        </svg>
-                    ) : (
-                        <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                        </svg>
-                    )}
-                    <span className="text-sm font-semibold">{toast.message}</span>
-                    <button
-                        onClick={() => setToast({ show: false, type: "", message: "" })}
-                        className="ml-2 opacity-80 hover:opacity-100 p-0.5 transition-opacity"
-                    >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                    </button>
+            {/* ---- Decorative background layer ---- */}
+            {!shouldReduceMotion && (
+                <div className="pointer-events-none absolute inset-0 overflow-hidden">
+                    <div className="absolute -top-24 right-[-8rem] w-[26rem] h-[26rem] rounded-full bg-teal-200/25 blur-3xl" />
+                    <div className="absolute bottom-[-6rem] -left-24 w-96 h-96 rounded-full bg-emerald-200/25 blur-3xl" />
+                    <div className="absolute top-1/3 left-1/2 w-72 h-72 rounded-full bg-cyan-100/25 blur-3xl" />
+
+                    <FloatingBox className="top-[10%] left-[10%] w-12 h-12 bg-teal-300/25 border border-teal-400/20" delay={0} duration={13} />
+                    <FloatingBox className="top-[22%] right-[14%] w-16 h-16 bg-emerald-300/20 border border-emerald-400/20" delay={1.4} duration={17} rotate={-14} />
+                    <FloatingBox className="bottom-[20%] left-[18%] w-10 h-10 bg-cyan-300/25 border border-cyan-400/20" delay={0.7} duration={11} rotate={18} />
+                    <FloatingBox className="bottom-[12%] right-[22%] w-14 h-14 bg-teal-200/25 border border-teal-300/20" delay={2} duration={16} rotate={-10} />
+
+                    <div
+                        className="absolute inset-0 opacity-[0.12]"
+                        style={{
+                            backgroundImage: "radial-gradient(circle, #0d9488 1px, transparent 1px)",
+                            backgroundSize: "36px 36px",
+                        }}
+                    />
                 </div>
             )}
 
-            <div className="max-w-7xl mx-auto space-y-8">
+            {/* Custom Toast Notification */}
+            <AnimatePresence>
+                {toast.show && (
+                    <motion.div
+                        initial={{ opacity: 0, y: -16, scale: 0.95 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                        transition={{ duration: 0.25 }}
+                        className={`fixed top-5 right-5 z-50 flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-xl border ${
+                            toast.type === "success"
+                                ? "bg-emerald-600 text-white border-emerald-500/30 shadow-emerald-600/20"
+                                : "bg-rose-600 text-white border-rose-500/30 shadow-rose-600/20"
+                        }`}
+                    >
+                        {toast.type === "success" ? (
+                            <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                            </svg>
+                        ) : (
+                            <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                            </svg>
+                        )}
+                        <span className="text-sm font-semibold">{toast.message}</span>
+                        <button
+                            onClick={() => setToast({ show: false, type: "", message: "" })}
+                            className="ml-2 opacity-80 hover:opacity-100 p-0.5 transition-opacity"
+                        >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            <div className="relative max-w-7xl mx-auto space-y-8">
                 {/* Header */}
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200/60 pb-6">
+                <motion.div
+                    initial={{ opacity: 0, y: -12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.4 }}
+                    className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200/60 pb-6"
+                >
                     <div>
                         <div className="flex items-center gap-3 mb-1">
                             <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
@@ -152,34 +240,57 @@ function Inventory() {
                             Add Inventory
                         </Link>
                     </div>
-                </div>
+                </motion.div>
 
                 {/* Grid */}
-                {inventory.length === 0 ? (
-                    <div className="bg-white rounded-3xl border border-dashed border-slate-300 p-12 text-center text-slate-400 shadow-sm">
-                        <svg className="w-12 h-12 mx-auto mb-3 stroke-current opacity-40 text-slate-500" fill="none" viewBox="0 0 24 24" strokeWidth="1.5">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
-                        </svg>
-                        <p className="text-base font-semibold text-slate-600">No inventory items found.</p>
-                        <Link
-                            to="/dashboard/inventory-add"
-                            className="inline-block mt-3 text-xs font-bold text-teal-600 hover:text-teal-700 hover:underline"
+                <AnimatePresence mode="wait">
+                    {inventory.length === 0 ? (
+                        <motion.div
+                            key="empty"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="bg-white rounded-3xl border border-dashed border-slate-300 p-12 text-center text-slate-400 shadow-sm"
                         >
-                            Click here to add your first item
-                        </Link>
-                    </div>
-                ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {inventory.map((item) => (
-                            <InventoryCard
-                                key={item.id}
-                                item={item}
-                                onEdit={handleEdit}
-                                onDelete={handleDelete}
-                            />
-                        ))}
-                    </div>
-                )}
+                            <svg className="w-12 h-12 mx-auto mb-3 stroke-current opacity-40 text-slate-500" fill="none" viewBox="0 0 24 24" strokeWidth="1.5">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                            </svg>
+                            <p className="text-base font-semibold text-slate-600">No inventory items found.</p>
+                            <Link
+                                to="/dashboard/inventory-add"
+                                className="inline-block mt-3 text-xs font-bold text-teal-600 hover:text-teal-700 hover:underline"
+                            >
+                                Click here to add your first item
+                            </Link>
+                        </motion.div>
+                    ) : (
+                        <motion.div
+                            key="grid"
+                            variants={gridVariants}
+                            initial="hidden"
+                            animate="show"
+                            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+                        >
+                            <AnimatePresence>
+                                {inventory.map((item) => (
+                                    <motion.div
+                                        key={item.id}
+                                        layout
+                                        variants={cardVariants}
+                                        exit="exit"
+                                        whileHover={{ y: -4 }}
+                                    >
+                                        <InventoryCard
+                                            item={item}
+                                            onEdit={handleEdit}
+                                            onDelete={handleDelete}
+                                        />
+                                    </motion.div>
+                                ))}
+                            </AnimatePresence>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
             </div>
 
             <EditInventoryModal

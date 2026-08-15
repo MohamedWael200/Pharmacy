@@ -1,10 +1,11 @@
-import {useEffect} from "react";
-import api from "../../../api/api.js";
-import {deleteInventory} from "../../../services/pharmacyService.js";
+import { motion, useReducedMotion } from "framer-motion";
 
-function InventoryCard({ item, onEdit , onDelete }) {
+function InventoryCard({ item, onEdit, onDelete }) {
+    const shouldReduceMotion = useReducedMotion();
+    const isLowStock = item.quantity < 5;
+
     return (
-        <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden hover:shadow-xl hover:border-teal-100 transition-all duration-300 flex flex-col justify-between group p-5">
+        <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden hover:shadow-xl hover:border-teal-100 transition-shadow duration-300 flex flex-col justify-between group p-5">
             <div className="space-y-4">
                 {/* Image */}
                 <div className="relative h-48 bg-slate-50 rounded-2xl overflow-hidden">
@@ -19,13 +20,29 @@ function InventoryCard({ item, onEdit , onDelete }) {
                             💊
                         </div>
                     )}
-                    <span className={`absolute top-3 right-3 text-[11px] font-bold px-3 py-1 rounded-full border shadow-sm backdrop-blur-md ${
-                        item.quantity < 5
-                            ? "bg-rose-50/90 text-rose-700 border-rose-200"
-                            : "bg-emerald-50/90 text-emerald-700 border-emerald-200"
-                    }`}>
+                    <motion.span
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={
+                            isLowStock && !shouldReduceMotion
+                                ? { opacity: [1, 0.85, 1], scale: 1 }
+                                : { opacity: 1, scale: 1 }
+                        }
+                        transition={
+                            isLowStock && !shouldReduceMotion
+                                ? { opacity: { duration: 1.6, repeat: Infinity, ease: "easeInOut" }, scale: { duration: 0.3 } }
+                                : { duration: 0.3 }
+                        }
+                        className={`absolute top-3 right-3 text-[11px] font-bold px-3 py-1 rounded-full border shadow-sm backdrop-blur-md ${
+                            isLowStock
+                                ? "bg-rose-50/90 text-rose-700 border-rose-200"
+                                : "bg-emerald-50/90 text-emerald-700 border-emerald-200"
+                        }`}
+                    >
+                        {isLowStock && (
+                            <span className="inline-block w-1.5 h-1.5 rounded-full bg-rose-500 mr-1 align-middle" />
+                        )}
                         {item.quantity} in stock
-                    </span>
+                    </motion.span>
                 </div>
 
                 {/* Information */}
@@ -61,28 +78,30 @@ function InventoryCard({ item, onEdit , onDelete }) {
             </div>
 
             {/* Action Button */}
-            <button
+            <motion.button
                 type="button"
+                whileTap={{ scale: 0.97 }}
                 onClick={() => onEdit(item)}
-                className="mt-5 w-full py-3 px-4 rounded-2xl text-sm font-semibold text-white bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-600 hover:to-emerald-600 focus:outline-none focus:ring-4 focus:ring-teal-500/20 shadow-md shadow-teal-500/20 transition-all duration-200 active:scale-[0.98] flex items-center justify-center gap-2"
+                className="mt-5 w-full py-3 px-4 rounded-2xl text-sm font-semibold text-white bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-600 hover:to-emerald-600 focus:outline-none focus:ring-4 focus:ring-teal-500/20 shadow-md shadow-teal-500/20 transition-colors duration-200 flex items-center justify-center gap-2"
             >
                 <svg className="w-4 h-4 stroke-current" fill="none" viewBox="0 0 24 24" strokeWidth="2">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                 </svg>
                 Edit Item
-            </button>
+            </motion.button>
             <div className="flex gap-3 mt-5">
-                <button
+                <motion.button
                     type="button"
+                    whileTap={{ scale: 0.97 }}
                     onClick={() => {
                         if (window.confirm("Are you sure you want to delete this item?")) {
                             onDelete(item.id);
                         }
                     }}
-                    className="flex-1 py-3 rounded-2xl bg-rose-600 text-white hover:bg-rose-700"
+                    className="flex-1 py-3 rounded-2xl bg-rose-600 text-white hover:bg-rose-700 transition-colors"
                 >
                     Delete
-                </button>
+                </motion.button>
             </div>
         </div>
     );
